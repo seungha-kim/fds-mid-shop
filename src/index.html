@@ -1,16 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>쇼핑몰!</title>
+  <title>남성 의류 쇼핑몰</title>
   <link rel="stylesheet" href="./index.scss">
 </head>
+
 <body>
   <!-- 템플릿을 이곳에 작성해주세요 -->
+  <template id="layout">
+    <div class="appbar">
+      <div class="appbar__left">LOGO</div>
+      <div class="appbar__right">
+        <div class="appbar__link sign-up">SIGN UP</div>
+        <div class="appbar__link sign-in">SIGN IN</div>
+        <div class="appbar__link sign-out">SIGN OUT</div>
+      </div>
+    </div>
+    <nav class="navbar">
+      <div class="navbar__link all">TOP</div>
+      <div class="navbar__link top">TOP</div>
+      <div class="navbar__link bottom">BOTTOM</div>
+      <div class="navbar__link shoes">SHOES</div>
+    </nav>
+    <main class="main"></main>
+  </template>
+
+  <template id="login-form">
+    <form class="login-form">
+      <label>
+        사용자 이름
+        <input type="text" name="username">
+      </label>
+      <label>
+        비밀번호
+        <input type="password" name="password">
+      </label>
+      <button>로그인</button>
+    </form>
+  </template>
+
+  <template id="product-list">
+    <div class="product-list"></div>
+  </template>
+
+  <template id="product-item">
+    <div class="product-item">
+      <img class="main-image">
+      <div class="title"></div>
+      <div class="description"></div>
+    </div>
+  </template>
+
+  <template id="product-detail">
+    <div class="product-detail">
+      <div class="product-info">
+        <img class="main-image">
+        <div class="title"></div>
+        <div class="description"></div>
+      </div>
+      <form class="cart-form"></form>
+      <div class="detail-image-list">
+      </div>
+    </div>
+  </template>
+
+  <template id="detail-image">
+    <img class="detail-image">
+  </template>
 
   <div class="root"></div>
   <script src="./index.js"></script>
 </body>
+
 </html>
