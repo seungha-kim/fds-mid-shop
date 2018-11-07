@@ -34,6 +34,7 @@ const rootEl = document.querySelector('.root')
 // 5. 이벤트 리스너 등록하기
 // 6. 템플릿을 문서에 삽입
 
+// fragment를 받아서 layout에 넣은 다음 rootEl에 그려주는 함수
 function drawFragment(frag) {
   const layoutFrag = document.importNode(templates.layout, true)
   const mainEl = layoutFrag.querySelector('.main')
