@@ -18,15 +18,22 @@
         <div class="appbar__link sign-up">SIGN UP</div>
         <div class="appbar__link sign-in">SIGN IN</div>
         <div class="appbar__link sign-out">SIGN OUT</div>
+        <div class="appbar__link cart">CART</div>
       </div>
     </div>
     <nav class="navbar">
-      <div class="navbar__link all">TOP</div>
+      <div class="navbar__link all">ALL</div>
       <div class="navbar__link top">TOP</div>
-      <div class="navbar__link bottom">BOTTOM</div>
+      <div class="navbar__link pants">PANTS</div>
       <div class="navbar__link shoes">SHOES</div>
     </nav>
     <main class="main"></main>
+  </template>
+
+  <template id="register-form">
+    <form class="register-form">
+      <!-- TODO -->
+    </form>
   </template>
 
   <template id="login-form">
@@ -62,7 +69,22 @@
         <div class="title"></div>
         <div class="description"></div>
       </div>
-      <form class="cart-form"></form>
+      <form class="cart-form">
+        <label>
+          옵션
+          <select name="option" class="option" required>
+            <option value="" disabled selected>옵션을 선택하세요</option>
+          </select>
+        </label>
+        <label>
+          수량
+          <input type="number" name="quantity" class="quantity" value="1" min="1" required>
+        </label>
+        <button>장바구니에 넣기</button>
+      </form>
+      <div class="total-wrap">
+        가격: <span class="total"></span>
+      </div>
       <div class="detail-image-list">
       </div>
     </div>
@@ -70,6 +92,22 @@
 
   <template id="detail-image">
     <img class="detail-image">
+  </template>
+
+  <template id="cart-list">
+    <h1>장바구니</h1>
+    <div class="cart-list"></div>
+  </template>
+
+  <template id="cart-item">
+    <div class="cart-item">
+      <img class="main-image">
+      <div class="title"></div>
+      <div class="description"></div>
+      <div class="option"></div>
+      <div class="quantity"></div>
+      <div class="price"></div>
+    </div>
   </template>
 
   <div class="root"></div>

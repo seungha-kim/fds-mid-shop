@@ -7,3 +7,10 @@ body {
 .product-item {
   cursor: pointer;
 }
+
+.appbar__link, .navbar__link {
+  cursor: pointer;
+  &:hover {
+    color: blue;
+  }
+}

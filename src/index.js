@@ -22,6 +22,9 @@ const templates = {
   productItem: document.querySelector('#product-item').content,
   productDetail: document.querySelector('#product-detail').content,
   detailImage: document.querySelector('#detail-image').content,
+  cartList: document.querySelector('#cart-list').content,
+  cartItem: document.querySelector('#cart-item').content,
+
 }
 
 const rootEl = document.querySelector('.root')
@@ -38,9 +41,70 @@ const rootEl = document.querySelector('.root')
 function drawFragment(frag) {
   const layoutFrag = document.importNode(templates.layout, true)
   const mainEl = layoutFrag.querySelector('.main')
+  const signUpEl = layoutFrag.querySelector('.sign-up')
+  const signInEl = layoutFrag.querySelector('.sign-in')
+  const signOutEl = layoutFrag.querySelector('.sign-out')
+  const cartEl = layoutFrag.querySelector('.cart')
+  const allEl = layoutFrag.querySelector('.all')
+  const topEl = layoutFrag.querySelector('.top')
+  const pantsEl = layoutFrag.querySelector('.pants')
+  const shoesEl = layoutFrag.querySelector('.shoes')
+
+  signUpEl.addEventListener('click', e => {
+    drawRegisterForm()
+  })
+  signInEl.addEventListener('click', e => {
+    drawLoginForm()
+  })
+  signOutEl.addEventListener('click', e => {
+    localStorage.removeItem('token')
+    drawLoginForm()
+  })
+  cartEl.addEventListener('click', e => {
+    drawCartList()
+  })
+  allEl.addEventListener('click', e => {
+    console.log('all')
+    drawProductList()
+  })
+  topEl.addEventListener('click', e => {
+    console.log('top')
+    drawProductList('top')
+  })
+  pantsEl.addEventListener('click', e => {
+    drawProductList('pants')
+  })
+  shoesEl.addEventListener('click', e => {
+    drawProductList('shoes')
+  })
+
   mainEl.appendChild(frag)
   rootEl.textContent = ''
   rootEl.appendChild(layoutFrag)
+}
+
+async function drawRegisterForm() {
+
+}
+
+async function drawLoginForm() {
+  const frag = document.importNode(templates.loginForm, true)
+
+  const loginFormEl = frag.querySelector('.login-form')
+
+  loginFormEl.addEventListener('submit', async e => {
+    e.preventDefault()
+    const username = e.target.elements.username.value
+    const password = e.target.elements.password.value
+    const { data: { token } } = await api.post('/users/login', {
+      username,
+      password
+    })
+    localStorage.setItem('token', token)
+    drawProductList()
+  })
+
+  drawFragment(frag)
 }
 
 async function drawProductList(category) {
@@ -60,7 +124,7 @@ async function drawProductList(category) {
   })
   // 4. 내용 채우기
   for (const {
-    id: postId, title, description, mainImgUrl
+    id: productId, title, description, mainImgUrl
   } of productList) {
     // 1. 템플릿 복사
     const frag = document.importNode(templates.productItem, true)
@@ -79,7 +143,7 @@ async function drawProductList(category) {
 
     // 5. 이벤트 리스너 등록하기
     productItemEl.addEventListener('click', e => {
-      drawPostDetail(postId)
+      drawProductDetail(productId)
     })
 
     // 6. 템플릿을 문서에 삽입
@@ -90,7 +154,7 @@ async function drawProductList(category) {
   drawFragment(frag)
 }
 
-async function drawPostDetail(productId) {
+async function drawProductDetail(productId) {
   // 1. 템플릿 복사
   const frag = document.importNode(templates.productDetail, true)
 
@@ -98,21 +162,30 @@ async function drawPostDetail(productId) {
   const mainImageEl = frag.querySelector('.main-image')
   const titleEl = frag.querySelector('.title')
   const descriptionEl = frag.querySelector('.description')
-  const cartFormEl = frag.querySelector('.cartForm')
+  const cartFormEl = frag.querySelector('.cart-form')
   const detailImageListEl = frag.querySelector('.detail-image-list')
+  const selectEl = frag.querySelector('.option')
+  const totalEl = frag.querySelector('.total')
+  const quantityEl = frag.querySelector('.quantity')
 
   // 3. 필요한 데이터 불러오기
   const { data: {
     title,
     description,
     mainImgUrl,
-    detailImgUrls
-  } } = await api.get(`/products/${productId}`)
+    detailImgUrls,
+    options
+  } } = await api.get(`/products/${productId}`, {
+    params: {
+      _embed: 'options'
+    }
+  })
 
   // 4. 내용 채우기
   mainImageEl.setAttribute('src', mainImgUrl)
   titleEl.textContent = title
   descriptionEl.textContent = description
+
   for (const url of detailImgUrls) {
     const frag = document.importNode(templates.detailImage, true)
 
@@ -123,6 +196,92 @@ async function drawPostDetail(productId) {
     detailImageListEl.appendChild(frag)
   }
 
+  for (const { id, title, price } of options) {
+    const optionEl = document.createElement('option')
+    optionEl.setAttribute('value', id)
+    optionEl.textContent = `${title} (${price}원)`
+    selectEl.appendChild(optionEl)
+  }
+
+  // 5. 이벤트 리스너 등록하기
+  function calculateTotal() {
+    // 선택된 option 태그에 해당하는 옵션 객체를 찾는다.
+    const optionId = parseInt(selectEl.value)
+    const option = options.find(o => o.id === optionId)
+    // 찾지 못하면 함수를 종료시킨다.
+    if (!option) return
+    // 수량을 가져온다.
+    const quantity = parseInt(quantityEl.value)
+    // 총액을 계산해서 표시한다.
+    totalEl.textContent = option.price * quantity
+  }
+  selectEl.addEventListener('change', calculateTotal)
+  quantityEl.addEventListener('input', calculateTotal)
+
+  cartFormEl.addEventListener('submit', async e => {
+    e.preventDefault()
+    const optionId = parseInt(selectEl.value)
+    const quantity = parseInt(quantityEl.value)
+    await api.post('/cartItems', {
+      optionId,
+      quantity,
+      orderId: -1
+    })
+    if (confirm('장바구니에 담긴 상품을 확인하시겠습니까?')) {
+      drawCartList()
+    } else {
+      drawProductList()
+    }
+  })
+
+  // 6. 템플릿을 문서에 삽입
+  drawFragment(frag)
+}
+
+async function drawCartList() {
+  // 1. 템플릿 복사
+  const frag = document.importNode(templates.cartList, true)
+
+  // 2. 요소 선택
+  const cartListEl = frag.querySelector('.cart-list')
+
+  // 3. 필요한 데이터 불러오기
+  const { data: cartItemList } = await api.get('/cartItems', {
+    params: {
+      orderId: '-1'
+    }
+  })
+
+  const optionIds = cartItemList.map(c => c.optionId)
+  const params = new URLSearchParams()
+  optionIds.forEach(optionId => params.append('id', optionId))
+  params.append('_expand', 'product')
+  const { data: optionList } = await api.get('/options', {
+    params
+  })
+
+  // 4. 내용 채우기
+  for (const cartItem of cartItemList) {
+    const frag = document.importNode(templates.cartItem, true)
+
+    const mainImageEl = frag.querySelector('.main-image')
+    const titleEl = frag.querySelector('.title')
+    const descriptionEl = frag.querySelector('.description')
+    const optionEl = frag.querySelector('.option')
+    const quantityEl = frag.querySelector('.quantity')
+    const priceEl = frag.querySelector('.price')
+
+    const option = optionList.find(o => o.id === cartItem.optionId)
+
+    mainImageEl.setAttribute('src', option.product.mainImgUrl)
+    titleEl.textContent = option.product.title
+    descriptionEl.textContent = option.product.description
+    optionEl.textContent = option.title
+    quantityEl.textContent = cartItem.quantity
+    priceEl.textContent = parseInt(cartItem.quantity) * option.price
+
+    cartListEl.appendChild(frag)
+  }
   // 5. 이벤트 리스너 등록하기
   // 6. 템플릿을 문서에 삽입
   drawFragment(frag)
