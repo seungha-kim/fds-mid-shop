@@ -3,11 +3,16 @@ $lime3: #c0eb75;
 $color-main: $lime7;
 $color-main-light: $lime3;
 $color-white: #fff;
+$gutter: 8px;
 
 body {
   margin: 0;
   padding: 0;
   font-family: sans-serif;
+}
+
+.main {
+  padding: $gutter;
 }
 
 .appbar {
@@ -23,7 +28,7 @@ body {
   &__link {
     padding: 5px;
     :not(:first-child) {
-      margin-left: 10px;
+      margin-left: $gutter;
     }
   }
 }
@@ -42,6 +47,8 @@ body {
 
 .product-item {
   cursor: pointer;
+  text-align: center;
+  margin-top: $gutter * 3;
   &:hover {
     color: $color-main-light;
   }
@@ -49,6 +56,55 @@ body {
     // min-width: 100vw;
     width: auto;
     height: 100px;
+  }
+}
+
+.product-detail {
+  .product-info {
+    display: flex;
+    justify-content: space-between;
+    &__left {
+      margin-right: $gutter;
+    }
+    &__right {
+      text-align: right;
+    }
+  }
+  .main-image {
+    width: 100px;
+  }
+  .cart-form {
+    width: 200px;
+    float: right;
+    label {
+      display: block;
+    }
+    &__field {
+      display: flex;
+      justify-content: space-between;
+      margin-top: $gutter;
+    }
+    &__label {
+      white-space: nowrap;
+      flex: 0 0 30px;
+    }
+    &__control {
+      display: block;
+      flex: 2;
+      margin-left: $gutter;
+    }
+    &__submit {
+      float: right;
+    }
+  }
+  .detail-image-list {
+    clear: both;
+    padding-top: $gutter * 2;
+    .detail-image {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+    }
   }
 }
 
@@ -62,12 +118,30 @@ body {
   }
 }
 
+.cart-table {
+  width: 100%;
+}
+
 .cart-item {
   border: 2px solid red;
 
   .main-image {
     display: block;
     height: 100px;
-    margin: 10px auto;
+    margin: $gutter auto;
+  }
+
+  .quantity {
+    width: 30px;
+  }
+}
+
+.order-table {
+  width: 100%;
+}
+
+.order-item {
+  .main-image {
+    width: 100px;
   }
 }
