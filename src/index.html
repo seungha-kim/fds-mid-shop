@@ -13,7 +13,9 @@
   <!-- 템플릿을 이곳에 작성해주세요 -->
   <template id="layout">
     <div class="appbar">
-      <div class="appbar__left">LOGO</div>
+      <div class="appbar__left">
+        <div class="appbar__link logo">LOGO</div>
+      </div>
       <div class="appbar__right">
         <div class="appbar__link sign-up">SIGN UP</div>
         <div class="appbar__link sign-in">SIGN IN</div>
@@ -105,8 +107,12 @@
       <div class="title"></div>
       <div class="description"></div>
       <div class="option"></div>
-      <div class="quantity"></div>
       <div class="price"></div>
+      <form class="quantity-form">
+        <input type="number" name="quantity" class="quantity">
+        <button>수량 수정</button>
+      </form>
+      <button class="delete">삭제</button>
     </div>
   </template>
 

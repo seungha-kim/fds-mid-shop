@@ -81,6 +81,7 @@ function drawFragment(frag) {
   mainEl.appendChild(frag)
   rootEl.textContent = ''
   rootEl.appendChild(layoutFrag)
+  window.scrollTo(0, 0)
 }
 
 async function drawRegisterForm() {
@@ -225,12 +226,10 @@ async function drawProductDetail(productId) {
     await api.post('/cartItems', {
       optionId,
       quantity,
-      orderId: -1
+      ordered: false
     })
     if (confirm('장바구니에 담긴 상품을 확인하시겠습니까?')) {
       drawCartList()
-    } else {
-      drawProductList()
     }
   })
 
@@ -248,7 +247,7 @@ async function drawCartList() {
   // 3. 필요한 데이터 불러오기
   const { data: cartItemList } = await api.get('/cartItems', {
     params: {
-      orderId: '-1'
+      ordered: 'false'
     }
   })
 
@@ -269,7 +268,9 @@ async function drawCartList() {
     const descriptionEl = frag.querySelector('.description')
     const optionEl = frag.querySelector('.option')
     const quantityEl = frag.querySelector('.quantity')
+    const quantityFormEl = frag.querySelector('.quantity-form')
     const priceEl = frag.querySelector('.price')
+    const deleteEl = frag.querySelector('.delete')
 
     const option = optionList.find(o => o.id === cartItem.optionId)
 
@@ -277,8 +278,30 @@ async function drawCartList() {
     titleEl.textContent = option.product.title
     descriptionEl.textContent = option.product.description
     optionEl.textContent = option.title
-    quantityEl.textContent = cartItem.quantity
+    quantityEl.value = cartItem.quantity
     priceEl.textContent = parseInt(cartItem.quantity) * option.price
+
+    quantityFormEl.addEventListener('submit', async e => {
+      e.preventDefault()
+      const quantity = parseInt(e.target.elements.quantity.value)
+      if (Number.isNaN(quantity)) {
+        alert('수량이 잘못되었습니다. 다시 확인해주십시오.')
+        return
+      }
+      if (confirm('정말 수정하시겠습니까?')) {
+        await api.patch(`/cartItems/${cartItem.id}`, {
+          quantity
+        })
+        drawCartList()
+      }
+    })
+
+    deleteEl.addEventListener('click', async e => {
+      if (confirm('정말 삭제하시겠습니까?')) {
+        await api.delete(`/cartItems/${cartItem.id}`)
+        drawCartList()
+      }
+    })
 
     cartListEl.appendChild(frag)
   }
