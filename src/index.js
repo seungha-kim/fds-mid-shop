@@ -24,7 +24,8 @@ const templates = {
   detailImage: document.querySelector('#detail-image').content,
   cartList: document.querySelector('#cart-list').content,
   cartItem: document.querySelector('#cart-item').content,
-
+  orderList: document.querySelector('#order-list').content,
+  orderItem: document.querySelector('#order-item').content,
 }
 
 const rootEl = document.querySelector('.root')
@@ -46,6 +47,7 @@ async function drawFragment(frag) {
   const signInEl = layoutFrag.querySelector('.sign-in')
   const signOutEl = layoutFrag.querySelector('.sign-out')
   const cartEl = layoutFrag.querySelector('.cart')
+  const orderEl = layoutFrag.querySelector('.order')
   const allEl = layoutFrag.querySelector('.all')
   const topEl = layoutFrag.querySelector('.top')
   const pantsEl = layoutFrag.querySelector('.pants')
@@ -81,6 +83,9 @@ async function drawFragment(frag) {
   })
   cartEl.addEventListener('click', e => {
     drawCartList()
+  })
+  orderEl.addEventListener('click', e => {
+    drawOrderList()
   })
   allEl.addEventListener('click', e => {
     console.log('all')
@@ -185,7 +190,7 @@ async function drawProductDetail(productId) {
   const cartFormEl = frag.querySelector('.cart-form')
   const detailImageListEl = frag.querySelector('.detail-image-list')
   const selectEl = frag.querySelector('.option')
-  const totalEl = frag.querySelector('.total')
+  const priceEl = frag.querySelector('.price')
   const quantityEl = frag.querySelector('.quantity')
 
   // 3. 필요한 데이터 불러오기
@@ -233,7 +238,8 @@ async function drawProductDetail(productId) {
     // 수량을 가져온다.
     const quantity = parseInt(quantityEl.value)
     // 총액을 계산해서 표시한다.
-    totalEl.textContent = option.price * quantity
+    const price = option.price * quantity
+    priceEl.textContent = `${price.toLocaleString()}원`
   }
   selectEl.addEventListener('change', calculateTotal)
   quantityEl.addEventListener('input', calculateTotal)
@@ -262,6 +268,8 @@ async function drawCartList() {
 
   // 2. 요소 선택
   const cartListEl = frag.querySelector('.cart-list')
+  const checkboxAllEl = frag.querySelector('.checkbox-all')
+  const orderEl = frag.querySelector('.order')
 
   // 3. 필요한 데이터 불러오기
   const { data: cartItemList } = await api.get('/cartItems', {
@@ -279,6 +287,15 @@ async function drawCartList() {
   })
 
   // 4. 내용 채우기
+  function updateCheckboxAll() {
+    const checkboxEls = Array.from(cartListEl.querySelectorAll('.checkbox'))
+    // 전부 체크되어 있다면, checkbox-all도 체크된 상태로 바꾸어줌
+    if (checkboxEls.every(el => el.checked)) {
+      checkboxAllEl.checked = true
+    } else {
+      checkboxAllEl.checked = false
+    }
+  }
   for (const cartItem of cartItemList) {
     const frag = document.importNode(templates.cartItem, true)
 
@@ -290,15 +307,19 @@ async function drawCartList() {
     const quantityFormEl = frag.querySelector('.quantity-form')
     const priceEl = frag.querySelector('.price')
     const deleteEl = frag.querySelector('.delete')
+    const checkboxEl = frag.querySelector('.checkbox')
 
     const option = optionList.find(o => o.id === cartItem.optionId)
 
+    const price = parseInt(cartItem.quantity) * option.price
     mainImageEl.setAttribute('src', option.product.mainImgUrl)
     titleEl.textContent = option.product.title
     descriptionEl.textContent = option.product.description
     optionEl.textContent = option.title
     quantityEl.value = cartItem.quantity
-    priceEl.textContent = parseInt(cartItem.quantity) * option.price
+    priceEl.textContent = `${price.toLocaleString()}원`
+    checkboxEl.setAttribute('data-id', cartItem.id)
+    // 혹은 이렇게 해도 됨: checkboxEl.dataset.id = cartItem.id
 
     quantityFormEl.addEventListener('submit', async e => {
       e.preventDefault()
@@ -322,8 +343,110 @@ async function drawCartList() {
       }
     })
 
+    checkboxEl.addEventListener('click', e => {
+      updateCheckboxAll()
+    })
+
     cartListEl.appendChild(frag)
   }
+
+  // 5. 이벤트 리스너 등록하기
+  checkboxAllEl.addEventListener('click', e => {
+    const checkboxEls = Array.from(cartListEl.querySelectorAll('.checkbox'))
+    if (e.target.checked) {
+      checkboxEls.forEach(el => el.checked = true)
+    } else {
+      checkboxEls.forEach(el => el.checked = false)
+    }
+  })
+
+  orderEl.addEventListener('click', async e => {
+    const checkboxEls = Array.from(cartListEl.querySelectorAll('.checkbox'))
+    const selectedIds = checkboxEls
+      .filter(el => el.checked)
+      .map(el => parseInt(el.getAttribute('data-id')))
+    // 혹은 이렇게 해도 됨: .map(el => parseInt(el.dataset.id))
+
+    const { data: { id: orderId } } = await api.post('/orders', {
+      orderTime: Date.now()
+    })
+
+    await Promise.all(selectedIds.map(cartItemId => {
+      return api.patch(`/cartItems/${cartItemId}`, {
+        ordered: true,
+        orderId
+      })
+    }))
+
+    if (confirm('주문이 완료되었습니다. 주문 내역을 확인하시겠습니까?')) {
+      drawOrderList()
+    } else {
+      drawCartList()
+    }
+  })
+
+  // 6. 템플릿을 문서에 삽입
+  drawFragment(frag)
+}
+
+async function drawOrderList() {
+  // 1. 템플릿 복사
+  const frag = document.importNode(templates.orderList, true)
+
+  // 2. 요소 선택
+  const orderListEl = frag.querySelector('.order-list')
+
+  // 3. 필요한 데이터 불러오기
+  const { data: orderList } = await api.get('/orders', {
+    params: {
+      _sort: 'id',
+      _order: 'desc',
+      _embed: 'cartItems'
+    }
+  })
+
+  const params = new URLSearchParams()
+  for (const orderItem of orderList) {
+    for (const cartItem of orderItem.cartItems) {
+      params.append('id', cartItem.optionId)
+    }
+  }
+  params.append('_expand', 'product')
+  const { data: optionList } = await api.get('/options', {
+    params
+  })
+
+  // 4. 내용 채우기
+  for (const orderItem of orderList) {
+    const frag = document.importNode(templates.orderItem, true)
+
+    const orderIdEl = frag.querySelector('.order-id')
+    const mainImageEl = frag.querySelector('.main-image')
+    const titleEl = frag.querySelector('.title')
+    const priceEl = frag.querySelector('.price')
+    const orderTimeEl = frag.querySelector('.order-time')
+
+    const { cartItems } = orderItem
+    const option = optionList.find(o => o.id === cartItems[0].optionId)
+    const title = (
+      cartItems.length > 1
+        ? `${option.product.title} 외 ${cartItems.length - 1}건`
+        : option.product.title
+    )
+    const price = cartItems.reduce((acc, cartItem) => {
+      const option = optionList.find(o => o.id === cartItem.optionId)
+      return acc + (option.price * cartItem.quantity)
+    }, 0)
+
+    orderIdEl.textContent = orderItem.id
+    mainImageEl.setAttribute('src', option.product.mainImgUrl)
+    titleEl.textContent = title
+    priceEl.textContent = `${price.toLocaleString()}원`
+    orderTimeEl.textContent = new Date(orderItem.orderTime).toLocaleString()
+
+    orderListEl.appendChild(frag)
+  }
+
   // 5. 이벤트 리스너 등록하기
   // 6. 템플릿을 문서에 삽입
   drawFragment(frag)
