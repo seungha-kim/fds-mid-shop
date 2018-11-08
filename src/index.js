@@ -248,13 +248,27 @@ async function drawProductDetail(productId) {
     e.preventDefault()
     const optionId = parseInt(selectEl.value)
     const quantity = parseInt(quantityEl.value)
-    await api.post('/cartItems', {
-      optionId,
-      quantity,
-      ordered: false
+
+    // 이미 장바구니에 같은 상품이 들어있는지 확인
+    const { data: orderedCartItems } = await api.get('/cartItems', {
+      params: {
+        ordered: false,
+        optionId
+      }
     })
-    if (confirm('장바구니에 담긴 상품을 확인하시겠습니까?')) {
-      drawCartList()
+    if (orderedCartItems.length > 0) {
+      if (confirm('이미 장바구니에 같은 상품이 존재합니다. 장바구니로 이동하시겠습니까?')) {
+        drawCartList()
+      }
+    } else {
+      await api.post('/cartItems', {
+        optionId,
+        quantity,
+        ordered: false
+      })
+      if (confirm('장바구니에 담긴 상품을 확인하시겠습니까?')) {
+        drawCartList()
+      }
     }
   })
 
