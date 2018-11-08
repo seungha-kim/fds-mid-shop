@@ -18,6 +18,7 @@ api.interceptors.request.use(function (config) {
 const templates = {
   layout: document.querySelector('#layout').content,
   loginForm: document.querySelector('#login-form').content,
+  registerForm: document.querySelector('#register-form').content,
   productList: document.querySelector('#product-list').content,
   productItem: document.querySelector('#product-item').content,
   productDetail: document.querySelector('#product-detail').content,
@@ -109,7 +110,31 @@ async function drawFragment(frag) {
 }
 
 async function drawRegisterForm() {
+  const frag = document.importNode(templates.registerForm, true)
 
+  const registerFormEl = frag.querySelector('.register-form')
+
+  registerFormEl.addEventListener('submit', async e => {
+    e.preventDefault()
+    const username = e.target.elements.username.value
+    const password = e.target.elements.password.value
+    const confirmPassword = e.target.elements.confirm.value
+    if (password !== confirmPassword) {
+      alert('비밀번호가 같지 않습니다. 다시 입력해주세요.')
+      e.target.elements.password.value = ''
+      e.target.elements.confirm.value = ''
+      e.target.elements.password.focus()
+      return
+    }
+    const { data: { token } } = await api.post('/users/register', {
+      username,
+      password
+    })
+    localStorage.setItem('token', token)
+    drawProductList()
+  })
+
+  drawFragment(frag)
 }
 
 async function drawLoginForm() {
