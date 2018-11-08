@@ -13,4 +13,7 @@ body {
   &:hover {
     color: blue;
   }
+  &.hidden {
+    display: none;
+  }
 }

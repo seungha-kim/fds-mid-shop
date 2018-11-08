@@ -38,7 +38,7 @@ const rootEl = document.querySelector('.root')
 // 6. 템플릿을 문서에 삽입
 
 // fragment를 받아서 layout에 넣은 다음 rootEl에 그려주는 함수
-function drawFragment(frag) {
+async function drawFragment(frag) {
   const layoutFrag = document.importNode(templates.layout, true)
   const mainEl = layoutFrag.querySelector('.main')
   const signUpEl = layoutFrag.querySelector('.sign-up')
@@ -49,6 +49,21 @@ function drawFragment(frag) {
   const topEl = layoutFrag.querySelector('.top')
   const pantsEl = layoutFrag.querySelector('.pants')
   const shoesEl = layoutFrag.querySelector('.shoes')
+
+  if (localStorage.getItem('token')) {
+    try {
+      const { data: username } = await api.get('/me')
+      signOutEl.classList.remove('hidden')
+    } catch (e) {
+      alert('유효하지 않은 토큰입니다. 다시 로그인해주세요.')
+      localStorage.removeItem('token')
+      drawLoginForm()
+      return
+    }
+  } else {
+    signInEl.classList.remove('hidden')
+    signUpEl.classList.remove('hidden')
+  }
 
   signUpEl.addEventListener('click', e => {
     drawRegisterForm()
