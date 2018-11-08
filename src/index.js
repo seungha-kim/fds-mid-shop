@@ -41,6 +41,7 @@ const rootEl = document.querySelector('.root')
 async function drawFragment(frag) {
   const layoutFrag = document.importNode(templates.layout, true)
   const mainEl = layoutFrag.querySelector('.main')
+  const logoEl = layoutFrag.querySelector('.logo')
   const signUpEl = layoutFrag.querySelector('.sign-up')
   const signInEl = layoutFrag.querySelector('.sign-in')
   const signOutEl = layoutFrag.querySelector('.sign-out')
@@ -65,6 +66,9 @@ async function drawFragment(frag) {
     signUpEl.classList.remove('hidden')
   }
 
+  logoEl.addEventListener('click', e => {
+    drawProductList()
+  })
   signUpEl.addEventListener('click', e => {
     drawRegisterForm()
   })
