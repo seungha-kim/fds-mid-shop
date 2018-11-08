@@ -163,6 +163,7 @@ async function drawProductList(category) {
 
   // 2. 요소 선택
   const productListEl = frag.querySelector('.product-list')
+  const headerEl = frag.querySelector('.header')
 
   // 3. 필요한 데이터 불러오기
   const params = {}
@@ -172,32 +173,43 @@ async function drawProductList(category) {
   const { data: productList } = await api.get('/products', {
     params
   })
+
   // 4. 내용 채우기
-  for (const {
-    id: productId, title, description, mainImgUrl
-  } of productList) {
-    // 1. 템플릿 복사
-    const frag = document.importNode(templates.productItem, true)
+  headerEl.textContent = (
+    category
+      ? category.toUpperCase()
+      : '전체 상품 목록'
+  )
 
-    // 2. 요소 선택
-    const productItemEl = frag.querySelector('.product-item')
-    const mainImageEl = frag.querySelector('.main-image')
-    const titleEl = frag.querySelector('.title')
-    const descriptionEl = frag.querySelector('.description')
+  if (productList.length > 0) {
+    for (const {
+      id: productId, title, description, mainImgUrl
+    } of productList) {
+      // 1. 템플릿 복사
+      const frag = document.importNode(templates.productItem, true)
 
-    // 3. 필요한 데이터 불러오기 - x
-    // 4. 내용 채우기
-    mainImageEl.setAttribute('src', mainImgUrl)
-    titleEl.textContent = title
-    descriptionEl.textContent = description
+      // 2. 요소 선택
+      const productItemEl = frag.querySelector('.product-item')
+      const mainImageEl = frag.querySelector('.main-image')
+      const titleEl = frag.querySelector('.title')
+      const descriptionEl = frag.querySelector('.description')
 
-    // 5. 이벤트 리스너 등록하기
-    productItemEl.addEventListener('click', e => {
-      drawProductDetail(productId)
-    })
+      // 3. 필요한 데이터 불러오기 - x
+      // 4. 내용 채우기
+      mainImageEl.setAttribute('src', mainImgUrl)
+      titleEl.textContent = title
+      descriptionEl.textContent = description
 
-    // 6. 템플릿을 문서에 삽입
-    productListEl.appendChild(frag)
+      // 5. 이벤트 리스너 등록하기
+      productItemEl.addEventListener('click', e => {
+        drawProductDetail(productId)
+      })
+
+      // 6. 템플릿을 문서에 삽입
+      productListEl.appendChild(frag)
+    }
+  } else {
+    productListEl.textContent = "해당 카테고리에 상품이 없습니다."
   }
   // 5. 이벤트 리스너 등록하기
   // 6. 템플릿을 문서에 삽입
@@ -340,7 +352,6 @@ async function drawCartList() {
 
     const mainImageEl = frag.querySelector('.main-image')
     const titleEl = frag.querySelector('.title')
-    const descriptionEl = frag.querySelector('.description')
     const optionEl = frag.querySelector('.option')
     const quantityEl = frag.querySelector('.quantity')
     const quantityFormEl = frag.querySelector('.quantity-form')
@@ -353,7 +364,6 @@ async function drawCartList() {
     const price = parseInt(cartItem.quantity) * option.price
     mainImageEl.setAttribute('src', option.product.mainImgUrl)
     titleEl.textContent = option.product.title
-    descriptionEl.textContent = option.product.description
     optionEl.textContent = option.title
     quantityEl.value = cartItem.quantity
     priceEl.textContent = `${price.toLocaleString()}원`
