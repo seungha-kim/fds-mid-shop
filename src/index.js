@@ -1,6 +1,7 @@
 import '@babel/polyfill' // 이 라인을 지우지 말아주세요!
 
 import axios from 'axios'
+import { withLoading, withAuth } from './hof'
 
 const api = axios.create({
   baseURL: process.env.API_URL
@@ -61,7 +62,7 @@ async function drawFragment(frag) {
     } catch (e) {
       alert('유효하지 않은 토큰입니다. 다시 로그인해주세요.')
       localStorage.removeItem('token')
-      drawLoginForm()
+      await drawLoginForm()
       return
     }
   } else {
@@ -89,11 +90,9 @@ async function drawFragment(frag) {
     drawOrderList()
   })
   allEl.addEventListener('click', e => {
-    console.log('all')
     drawProductList()
   })
   topEl.addEventListener('click', e => {
-    console.log('top')
     drawProductList('top')
   })
   pantsEl.addEventListener('click', e => {
@@ -114,7 +113,7 @@ async function drawRegisterForm() {
 
   const registerFormEl = frag.querySelector('.register-form')
 
-  registerFormEl.addEventListener('submit', async e => {
+  registerFormEl.addEventListener('submit', withLoading(async e => {
     e.preventDefault()
     const username = e.target.elements.username.value
     const password = e.target.elements.password.value
@@ -131,10 +130,10 @@ async function drawRegisterForm() {
       password
     })
     localStorage.setItem('token', token)
-    drawProductList()
-  })
+    await drawProductList()
+  }))
 
-  drawFragment(frag)
+  await drawFragment(frag)
 }
 
 async function drawLoginForm() {
@@ -142,7 +141,7 @@ async function drawLoginForm() {
 
   const loginFormEl = frag.querySelector('.login-form')
 
-  loginFormEl.addEventListener('submit', async e => {
+  loginFormEl.addEventListener('submit', withLoading(async e => {
     e.preventDefault()
     const username = e.target.elements.username.value
     const password = e.target.elements.password.value
@@ -151,10 +150,10 @@ async function drawLoginForm() {
       password
     })
     localStorage.setItem('token', token)
-    drawProductList()
-  })
+    await drawProductList()
+  }))
 
-  drawFragment(frag)
+  await drawFragment(frag)
 }
 
 async function drawProductList(category) {
@@ -213,7 +212,7 @@ async function drawProductList(category) {
   }
   // 5. 이벤트 리스너 등록하기
   // 6. 템플릿을 문서에 삽입
-  drawFragment(frag)
+  await drawFragment(frag)
 }
 
 async function drawProductDetail(productId) {
@@ -281,7 +280,7 @@ async function drawProductDetail(productId) {
   selectEl.addEventListener('change', calculateTotal)
   quantityEl.addEventListener('input', calculateTotal)
 
-  cartFormEl.addEventListener('submit', async e => {
+  cartFormEl.addEventListener('submit', withAuth(withLoading(async e => {
     e.preventDefault()
     const optionId = parseInt(selectEl.value)
     const quantity = parseInt(quantityEl.value)
@@ -295,7 +294,7 @@ async function drawProductDetail(productId) {
     })
     if (orderedCartItems.length > 0) {
       if (confirm('이미 장바구니에 같은 상품이 존재합니다. 장바구니로 이동하시겠습니까?')) {
-        drawCartList()
+        await drawCartList()
       }
     } else {
       await api.post('/cartItems', {
@@ -304,13 +303,13 @@ async function drawProductDetail(productId) {
         ordered: false
       })
       if (confirm('장바구니에 담긴 상품을 확인하시겠습니까?')) {
-        drawCartList()
+        await drawCartList()
       }
     }
-  })
+  })))
 
   // 6. 템플릿을 문서에 삽입
-  drawFragment(frag)
+  await drawFragment(frag)
 }
 
 async function drawCartList() {
@@ -370,7 +369,7 @@ async function drawCartList() {
     checkboxEl.setAttribute('data-id', cartItem.id)
     // 혹은 이렇게 해도 됨: checkboxEl.dataset.id = cartItem.id
 
-    quantityFormEl.addEventListener('submit', async e => {
+    quantityFormEl.addEventListener('submit', withLoading(async e => {
       e.preventDefault()
       const quantity = parseInt(e.target.elements.quantity.value)
       if (Number.isNaN(quantity)) {
@@ -381,16 +380,16 @@ async function drawCartList() {
         await api.patch(`/cartItems/${cartItem.id}`, {
           quantity
         })
-        drawCartList()
+        await drawCartList()
       }
-    })
+    }))
 
-    deleteEl.addEventListener('click', async e => {
+    deleteEl.addEventListener('click', withLoading(async e => {
       if (confirm('정말 삭제하시겠습니까?')) {
         await api.delete(`/cartItems/${cartItem.id}`)
-        drawCartList()
+        await drawCartList()
       }
-    })
+    }))
 
     checkboxEl.addEventListener('click', e => {
       updateCheckboxAll()
@@ -409,7 +408,7 @@ async function drawCartList() {
     }
   })
 
-  orderEl.addEventListener('click', async e => {
+  orderEl.addEventListener('click', withLoading(async e => {
     const checkboxEls = Array.from(cartListEl.querySelectorAll('.checkbox'))
     const selectedIds = checkboxEls
       .filter(el => el.checked)
@@ -428,14 +427,14 @@ async function drawCartList() {
     }))
 
     if (confirm('주문이 완료되었습니다. 주문 내역을 확인하시겠습니까?')) {
-      drawOrderList()
+      await drawOrderList()
     } else {
-      drawCartList()
+      await drawCartList()
     }
-  })
+  }))
 
   // 6. 템플릿을 문서에 삽입
-  drawFragment(frag)
+  await drawFragment(frag)
 }
 
 async function drawOrderList() {
@@ -498,7 +497,15 @@ async function drawOrderList() {
 
   // 5. 이벤트 리스너 등록하기
   // 6. 템플릿을 문서에 삽입
-  drawFragment(frag)
+  await drawFragment(frag)
 }
+
+drawFragment = withLoading(drawFragment)
+drawRegisterForm = withLoading(drawRegisterForm)
+drawLoginForm = withLoading(drawLoginForm)
+drawProductList = withLoading(drawProductList)
+drawProductDetail = withLoading(drawProductDetail)
+drawCartList = withAuth(withLoading(drawCartList))
+drawOrderList = withAuth(withLoading(drawOrderList))
 
 drawProductList()
